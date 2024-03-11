@@ -248,7 +248,6 @@ local function create_info_bar(opts)
 
     output.layout = wibox.layout.fixed.horizontal
 
-    PP("the info bar has " .. #output .. " entries")
     return output
 end
 
