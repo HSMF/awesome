@@ -6,11 +6,11 @@ local function dump_pretty(obj, indent)
     if type(obj) == "table" then
         local s = "{"
         for k, v in pairs(obj) do
-            for i = 1, indent do
+            for _ = 1, indent do
                 s = s .. "  "
             end
             if type(k) ~= "number" then
-                k = '"' .. k .. '"'
+                k = '"' .. tostring(k) .. '"'
             end
             s = s .. "[" .. k .. "] = " .. dump_pretty(v, indent + 1) .. ", \n"
         end
@@ -255,11 +255,14 @@ globalkeys = gears.table.join(
     awful.key({ modkey }, "j", function()
         awful.client.focus.byidx(1)
     end, { description = "focus next by index", group = "client" }),
+    awful.key({ modkey }, "Tab", function()
+        awful.client.focus.byidx(1)
+    end, { description = "focus next by index", group = "client" }),
     awful.key({ modkey }, "k", function()
         awful.client.focus.byidx(-1)
     end, { description = "focus previous by index", group = "client" }),
     awful.key({ modkey }, "w", function()
-        mymainmenu:show()
+        awful.screen.focused().main_menu:show()
     end, { description = "show main menu", group = "awesome" }),
 
     -- Layout manipulation
@@ -276,12 +279,21 @@ globalkeys = gears.table.join(
         awful.screen.focus_relative(-1)
     end, { description = "focus the previous screen", group = "screen" }),
     awful.key({ modkey }, "u", awful.client.urgent.jumpto, { description = "jump to urgent client", group = "client" }),
-    awful.key({ modkey }, "Tab", function()
-        awful.client.focus.history.previous()
-        if client.focus then
-            client.focus:raise()
-        end
-    end, { description = "go back", group = "client" }),
+    -- awful.key({ modkey }, "Tab", function()
+    --     awful.client.focus.history.previous()
+    --     if client.focus then
+    --         client.focus:raise()
+    --     end
+    -- end, { description = "go back", group = "client" }),
+
+    awful.key({ modkey }, "x", function()
+        awful.prompt.run({
+            prompt = "Run Lua code: ",
+            textbox = awful.screen.focused().mypromptbox.widget,
+            exe_callback = awful.util.eval,
+            history_path = awful.util.get_cache_dir() .. "/history_eval",
+        })
+    end, { description = "lua execute prompt", group = "awesome" }),
 
     -- Standard program
     awful.key({ modkey }, "Return", function()
@@ -342,6 +354,9 @@ globalkeys = gears.table.join(
     awful.key({ modkey }, "r", function()
         awful.screen.focused().mypromptbox:run()
     end, { description = "run prompt", group = "launcher" }),
+    awful.key({ modkey }, "d", function()
+        require("launcher").launch()
+    end, { description = "launch apps", group = "launcher" }),
 
     awful.key({ modkey }, "x", function()
         awful.prompt.run({
@@ -590,6 +605,8 @@ client.connect_signal("unfocus", function(c)
     c.border_color = beautiful.border_normal
 end)
 -- }}}
+
+require("launcher").init()
 
 -- custom events. This emits signals for many different things
 require("myevents")

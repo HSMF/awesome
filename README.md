@@ -17,6 +17,16 @@ install those:
 - `ttf-material-icons-git`
 - `ttf-typicons`
 
+### Luarocks packages
+
+```sh
+luarocks install lain
+```
+
+### Other
+
+- rofi theme: [catppuccin/rofi](https://github.com/catppuccin/rofi)
+
 ## Credits
 
 this config is currently strongly influenced by [elenapan/dotfiles](https://github.com/elenapan/dotfiles)

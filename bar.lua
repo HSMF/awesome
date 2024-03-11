@@ -5,6 +5,13 @@ local menubar = require("menubar")
 local gears = require("gears")
 local wibox = require("wibox")
 local helpers = require("helpers")
+local lain = require("lain")
+local icons = require("icons").image
+
+local markup = lain.util.markup
+local separators = lain.util.separators
+
+local SHOW_BATTERY = true
 
 local tag_colors_empty = {
     "#00000000",
@@ -140,22 +147,123 @@ local myawesomemenu = {
     },
 }
 
-local mymainmenu = awful.menu({
-    items = {
-        { "awesome",       myawesomemenu, beautiful.awesome_icon },
-        { "open terminal", terminal },
-    },
-})
-
-local mylauncher = awful.widget.launcher({ image = beautiful.awesome_icon, menu = mymainmenu })
-
 -- Menubar configuration
 menubar.utils.terminal = terminal -- Set the terminal for applications that require it
 -- }}}
 
+-- {{{ Separators
+local spr = wibox.widget.textbox(" ")
+local arrl_dl = separators.arrow_left(beautiful.bg_focus, "alpha")
+local arrl_ld = separators.arrow_left("alpha", beautiful.bg_focus)
+-- }}}
+
+-- {{{ Icons
+-- CPU usage
+local cpuicon = wibox.widget.imagebox(icons.cpu)
+local cpu = lain.widget.cpu({
+    settings = function()
+        widget:set_markup(markup.font(beautiful.font, " " .. cpu_now.usage .. "% "))
+    end,
+})
+
+-- Net
+local neticon = wibox.widget.imagebox(beautiful.widget_net)
+local net = lain.widget.net({
+    settings = function()
+        widget:set_markup(
+            markup.font(
+                beautiful.font,
+                markup("#7AC82E", " " .. string.format("%06.1f", net_now.received))
+                .. " "
+                .. markup("#46A8C3", " " .. string.format("%06.1f", net_now.sent) .. " ")
+            )
+        )
+    end,
+})
+
+-- Battery
+local baticon = wibox.widget.imagebox(icons.battery)
+local bat = lain.widget.bat({
+    settings = function()
+        if bat_now.status and bat_now.status ~= "N/A" then
+            if bat_now.ac_status == 1 then
+                baticon:set_image(icons.battery_charging)
+            elseif not bat_now.perc and tonumber(bat_now.perc) <= 5 then
+                baticon:set_image(icons.alert)
+            elseif not bat_now.perc and tonumber(bat_now.perc) <= 15 then
+                -- TODO: add icon for low and alert
+                baticon:set_image(icons.alert)
+            else
+                baticon:set_image(icons.battery)
+            end
+            widget:set_markup(markup.font(beautiful.font, " " .. bat_now.perc .. "% "))
+        else
+            widget:set_markup(markup.font(beautiful.font, " AC "))
+            baticon:set_image(beautiful.widget_ac)
+        end
+    end,
+})
+
+-- }}}
+
+---@param opts table
+local function create_info_bar(opts)
+    local output = {}
+
+    local function add(prop)
+        if prop == nil then
+            return
+        elseif type(prop) == "function" then
+            add(prop())
+        elseif type(prop) == "table" then
+            for _, value in ipairs(prop) do
+                output[#output + 1] = value
+            end
+        else
+            output[#output + 1] = prop
+        end
+    end
+
+    local sep = opts.separator
+
+    local infos = {
+        "keyboard_layout",
+        "cpu",
+        "battery",
+        "network",
+        "clock",
+        "tray",
+        -- layout to the very right
+        "layout",
+    }
+
+    for i, info in ipairs(infos) do
+        if type(sep) == "function" then
+            add(sep(i))
+        elseif i ~= 1 then
+            add(sep)
+        end
+        add(opts[info])
+    end
+
+    output.layout = wibox.layout.fixed.horizontal
+
+    PP("the info bar has " .. #output .. " entries")
+    return output
+end
+
 awful.screen.connect_for_each_screen(function(s)
     -- Create a promptbox for each screen
     s.mypromptbox = awful.widget.prompt()
+
+    s.main_menu = awful.menu({
+        items = {
+            { "awesome",       myawesomemenu, beautiful.awesome_icon },
+            { "open terminal", terminal },
+        },
+    })
+
+    local mylauncher = awful.widget.launcher({ image = icons.start, menu = s.main_menu })
     -- Create an imagebox widget which will contain an icon indicating which layout we're using.
     -- We need one layoutbox per screen.
     s.mylayoutbox = awful.widget.layoutbox(s)
@@ -242,7 +350,7 @@ awful.screen.connect_for_each_screen(function(s)
     s.mywibox = awful.wibar({ position = "bottom", screen = s })
     s.traybox = wibox({ visible = false, ontop = true, shape = helpers.rrect(beautiful.border_radius), type = "dock" })
 
-    local image = require("icons").image.lock
+    local image = require("icons").image.home
     local tray_button = awful.widget.button({
         image = image,
         buttons = {
@@ -260,13 +368,30 @@ awful.screen.connect_for_each_screen(function(s)
             s.mypromptbox,
         },
         s.mytasklist, -- Middle widget
-        {             -- Right widgets
-            layout = wibox.layout.fixed.horizontal,
-            mykeyboardlayout,
-            mytextclock,
-            tray_button,
-            s.mylayoutbox,
-        },
+        create_info_bar({
+            keyboard_layout = { mykeyboardlayout },
+            clock = { mytextclock },
+            cpu = {
+                cpuicon,
+                cpu.widget,
+            },
+            tray = { tray_button },
+            layout = { s.mylayoutbox },
+            battery = function()
+                if SHOW_BATTERY then
+                    return {
+                        baticon,
+                        bat.widget,
+                    }
+                end
+            end,
+            -- network = {
+            --     neticon,
+            --     net.widget,
+            -- },
+
+            separator = {},
+        }),
     })
 
     s.workspaces = awful.wibar({
