@@ -17,7 +17,7 @@ local theme = {}
 
 -- Set theme wallpaper.
 -- It won't change anything if you are using feh to set the wallpaper like I do.
-theme.wallpaper = os.getenv("HOME") .. "/Pictures/wallpapers/wallpaper.png"
+theme.wallpaper = require("user-configs").default_wallpaper
 
 -- Set the theme font. This is the font that will be used by default in menus, bars, titlebars etc.
 -- theme.font          = "sans 11"
@@ -39,7 +39,7 @@ theme.fg_urgent = x.color9
 theme.fg_minimize = x.color8
 
 -- Gaps
-theme.useless_gap = dpi(5)
+theme.useless_gap = require("user-configs").gaps or dpi(0)
 -- This could be used to manually determine how far away from the
 -- screen edge the bars / notifications should be.
 theme.screen_margin = dpi(5)

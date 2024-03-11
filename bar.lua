@@ -11,8 +11,6 @@ local icons = require("icons").image
 local markup = lain.util.markup
 local separators = lain.util.separators
 
-local SHOW_BATTERY = true
-
 local tag_colors_empty = {
     "#00000000",
     "#00000000",
@@ -163,6 +161,13 @@ local cpuicon = wibox.widget.imagebox(icons.cpu)
 local cpu = lain.widget.cpu({
     settings = function()
         widget:set_markup(markup.font(beautiful.font, " " .. cpu_now.usage .. "% "))
+    end,
+})
+
+local tempicon = wibox.widget.imagebox(icons.temperature)
+local temp = lain.widget.temp({
+    settings = function()
+        widget:set_markup(markup.font(beautiful.font, " " .. coretemp_now .. "°C "))
     end,
 })
 
@@ -377,7 +382,7 @@ awful.screen.connect_for_each_screen(function(s)
             tray = { tray_button },
             layout = { s.mylayoutbox },
             battery = function()
-                if SHOW_BATTERY then
+                if not require("user-configs").hide_battery then
                     return {
                         baticon,
                         bat.widget,
@@ -389,7 +394,7 @@ awful.screen.connect_for_each_screen(function(s)
             --     net.widget,
             -- },
 
-            separator = {},
+            -- separator = { spr },
         }),
     })
 

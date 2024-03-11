@@ -66,6 +66,30 @@ local hotkeys_popup = require("awful.hotkeys_popup")
 -- when client with a matching name is opened:
 require("awful.hotkeys_popup.keys")
 
+local function init_config()
+    local ok, config = pcall(require, "user-configs")
+    if ok then
+        return config
+    end
+    local filename = gears.filesystem.get_configuration_dir() .. "/user-configs.lua"
+    local f = io.open(filename, "w+")
+    if f == nil then
+        naughty.notify({
+            preset = naughty.config.presets.critical,
+            title = "could not create file",
+            text = awesome.startup_errors,
+        })
+        return
+    end
+    f:write([[-- your configs go here
+local my_config = {}
+return my_config]])
+    f:close()
+    return {}
+end
+
+local user_config = init_config()
+
 -- {{{ Error handling
 -- Check if awesome encountered an error during startup and fell back to
 -- another config (This code will only ever execute for the fallback config)
@@ -98,8 +122,10 @@ end
 -- }}}
 
 local xrdb = beautiful.xresources.get_current_theme()
+---@diagnostic disable-next-line: lowercase-global
 dpi = beautiful.xresources.apply_dpi
 
+---@diagnostic disable-next-line: lowercase-global
 x = {
     --           xrdb variable
     background = xrdb.background,
@@ -137,8 +163,11 @@ local icons = require("icons")
 icons.init("drops")
 
 -- This is used later as the default terminal and editor to run.
+---@diagnostic disable-next-line: lowercase-global
 terminal = "kitty"
+---@diagnostic disable-next-line: lowercase-global
 editor = os.getenv("EDITOR") or "nvim"
+---@diagnostic disable-next-line: lowercase-global
 editor_cmd = terminal .. " -e " .. editor
 
 -- Default modkey.
@@ -146,6 +175,7 @@ editor_cmd = terminal .. " -e " .. editor
 -- If you do not like this or do not have such a key,
 -- I suggest you to remap Mod4 to another key using xmodmap or other tools.
 -- However, you can use another modifier like Mod1, but it may interact with others.
+---@diagnostic disable-next-line: lowercase-global
 modkey = "Mod4"
 
 -- Table of layouts to cover with awful.layout.inc, order matters.
@@ -192,14 +222,7 @@ end
 screen.connect_signal("property::geometry", set_wallpaper)
 
 local wallpapers_location = os.getenv("HOME") .. "/Pictures/wallpapers/"
-local wallpapers = {
-    ["Dream Theater"] = "dreamtheater-16:9.png",
-    ["Leprous"] = "leprous.jpg",
-    ["Caligula's Horse"] = "c-horse.png",
-    ["Polyphia"] = "polyphia.jpg",
-    ["Plini"] = "plini.png",
-    ["Haken"] = "haken.png",
-}
+local wallpapers = require("user-configs").spotify_wallpapers or {}
 
 local spotify_icon = " \u{f1bc} "
 
@@ -207,6 +230,7 @@ awful.screen.connect_for_each_screen(function(s)
     -- Wallpaper
     set_wallpaper(s)
 
+    ---@diagnostic disable-next-line: unused-local
     awesome.connect_signal("myevents::spotify", function(artist, title, status)
         local wallpaper = wallpapers[artist]
         if wallpaper then
@@ -239,7 +263,7 @@ end)
 -- {{{ Mouse bindings
 root.buttons(gears.table.join(
     awful.button({}, 3, function()
-        mymainmenu:toggle()
+        awful.screen.focused().main_menu:toggle()
     end),
     awful.button({}, 4, awful.tag.viewnext),
     awful.button({}, 5, awful.tag.viewprev)
@@ -247,6 +271,7 @@ root.buttons(gears.table.join(
 -- }}}
 
 -- {{{ Key bindings
+---@diagnostic disable-next-line: lowercase-global
 globalkeys = gears.table.join(
     awful.key({ modkey }, "s", hotkeys_popup.show_help, { description = "show help", group = "awesome" }),
     awful.key({ modkey }, "Left", awful.tag.viewprev, { description = "view previous", group = "tag" }),
@@ -372,6 +397,7 @@ globalkeys = gears.table.join(
     end, { description = "show the menubar", group = "launcher" })
 )
 
+---@diagnostic disable-next-line: lowercase-global
 clientkeys = gears.table.join(
     awful.key({ modkey }, "f", function(c)
         c.fullscreen = not c.fullscreen
@@ -418,6 +444,7 @@ clientkeys = gears.table.join(
 -- Be careful: we use keycodes to make it work on any keyboard layout.
 -- This should map on the top row of your keyboard, usually 1 to 9.
 for i = 1, 9 do
+    ---@diagnostic disable-next-line: lowercase-global
     globalkeys = gears.table.join(
         globalkeys,
         -- View tag only.
@@ -457,6 +484,7 @@ for i = 1, 9 do
     )
 end
 
+---@diagnostic disable-next-line: lowercase-global
 clientbuttons = gears.table.join(
     awful.button({}, 1, function(c)
         c:emit_signal("request::activate", "mouse_click", { raise = true })

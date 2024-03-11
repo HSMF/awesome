@@ -2,6 +2,20 @@
 
 it's awesome
 
+## Per-Setup Configuration
+
+Running awesome for the first time should create [~/.config/awesome/user-configs.lua](~/.config/awesome/user-configs.lua).
+
+The following keys are supported in user-config:
+
+```lua
+my_config.spotify_wallpapers = {
+  artist_name:string = filename:string
+}
+my_config.default_wallpaper = wallpaper_path:string
+my_config.gaps = gap_size:integer
+```
+
 ## Packages
 
 - `playerctl`
