@@ -14,6 +14,7 @@ my_config.spotify_wallpapers = {
 }
 my_config.default_wallpaper = wallpaper_path:string
 my_config.gaps = gap_size:integer
+my_config.on_startup = function() .. end
 ```
 
 ## Packages
@@ -35,6 +36,7 @@ install those:
 
 ```sh
 luarocks install lain
+luarocks install luafilesystem
 ```
 
 ### Other

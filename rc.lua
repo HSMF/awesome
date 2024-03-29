@@ -66,30 +66,6 @@ local hotkeys_popup = require("awful.hotkeys_popup")
 -- when client with a matching name is opened:
 require("awful.hotkeys_popup.keys")
 
-local function init_config()
-    local ok, config = pcall(require, "user-configs")
-    if ok then
-        return config
-    end
-    local filename = gears.filesystem.get_configuration_dir() .. "/user-configs.lua"
-    local f = io.open(filename, "w+")
-    if f == nil then
-        naughty.notify({
-            preset = naughty.config.presets.critical,
-            title = "could not create file",
-            text = awesome.startup_errors,
-        })
-        return
-    end
-    f:write([[-- your configs go here
-local my_config = {}
-return my_config]])
-    f:close()
-    return {}
-end
-
-local user_config = init_config()
-
 -- {{{ Error handling
 -- Check if awesome encountered an error during startup and fell back to
 -- another config (This code will only ever execute for the fallback config)
@@ -148,6 +124,8 @@ x = {
     color15 = xrdb.color15,
 }
 
+PP(x)
+
 -- {{{ Variable definitions
 -- Themes define colours, icons, font and wallpapers.
 local themes = { "catppuccin", "amarena" }
@@ -181,7 +159,6 @@ modkey = "Mod4"
 -- Table of layouts to cover with awful.layout.inc, order matters.
 awful.layout.layouts = {
     awful.layout.suit.max,
-    awful.layout.suit.floating,
     awful.layout.suit.tile,
     awful.layout.suit.tile.left,
     awful.layout.suit.tile.bottom,
@@ -190,6 +167,7 @@ awful.layout.layouts = {
     -- awful.layout.suit.fair.horizontal,
     -- awful.layout.suit.spiral,
     -- awful.layout.suit.spiral.dwindle,
+    awful.layout.suit.floating,
     awful.layout.suit.max.fullscreen,
     -- awful.layout.suit.magnifier,
     -- awful.layout.suit.corner.nw,
@@ -221,27 +199,11 @@ end
 -- Re-set wallpaper when a screen's geometry changes (e.g. different resolution)
 screen.connect_signal("property::geometry", set_wallpaper)
 
-local wallpapers_location = os.getenv("HOME") .. "/Pictures/wallpapers/"
-local wallpapers = require("user-configs").spotify_wallpapers or {}
-
 local spotify_icon = " \u{f1bc} "
 
 awful.screen.connect_for_each_screen(function(s)
     -- Wallpaper
     set_wallpaper(s)
-
-    ---@diagnostic disable-next-line: unused-local
-    awesome.connect_signal("myevents::spotify", function(artist, title, status)
-        local wallpaper = wallpapers[artist]
-        if wallpaper then
-            wallpaper = wallpapers_location .. wallpaper
-        end
-        wallpaper = wallpaper or beautiful.wallpaper
-        if type(wallpaper) == "function" then
-            wallpaper = wallpaper(s)
-        end
-        gears.wallpaper.maximized(wallpaper, s, true)
-    end)
 
     local names = {
         "main",
@@ -406,6 +368,9 @@ clientkeys = gears.table.join(
     awful.key({ modkey, "Shift" }, "c", function(c)
         c:kill()
     end, { description = "close", group = "client" }),
+    awful.key({ modkey }, "q", function(c)
+        c:kill()
+    end, { description = "close", group = "client" }),
     awful.key(
         { modkey, "Control" },
         "space",
@@ -557,10 +522,11 @@ awful.rules.rules = {
     },
 
     -- Add titlebars to normal clients and dialogs
-    { rule_any = { type = { "normal", "dialog" } }, properties = { titlebars_enabled = true } },
+    { rule_any = { type = { "normal", "dialog" } }, properties = { titlebars_enabled = false } },
 
     { rule = { name = "Discord" },                  properties = { screen = 1, tag = "disc" } },
     { rule = { name = "Spotify" },                  properties = { screen = 1, tag = spotify_icon } },
+    { rule = { name = "awesome-pets" },             properties = { floating = true, ontop = true } },
 
     -- Set Firefox to always map on the tag named "2" on screen 1.
     -- { rule = { class = "Firefox" },
@@ -621,6 +587,8 @@ client.connect_signal("request::titlebars", function(c)
     })
 end)
 
+require("spotify-wallpapers")
+
 -- Enable sloppy focus, so that focus follows mouse.
 client.connect_signal("mouse::enter", function(c)
     c:emit_signal("request::activate", "mouse_enter", { raise = false })
@@ -638,3 +606,8 @@ require("launcher").init()
 
 -- custom events. This emits signals for many different things
 require("myevents")
+
+local user_config = require("helpers").user_config()
+if type(user_config.on_startup) == "function" then
+    user_config.on_startup()
+end

@@ -474,4 +474,31 @@ function helpers.file_exists(name)
     end
 end
 
+---retrieves the user configs, or returns a default table if none are set
+---creates the config file if it doesn't exist yet
+---@return table
+function helpers.user_config()
+    local ok, config = pcall(require, "user-configs")
+    if ok then
+        return config
+    end
+    local filename = gears.filesystem.get_configuration_dir() .. "/user-configs.lua"
+    local f = io.open(filename, "w+")
+    if f == nil then
+        naughty.notify({
+            preset = naughty.config.presets.critical,
+            title = "could not create file",
+            text = awesome.startup_errors,
+        })
+        return {}
+    end
+    f:write([[-- your configs go here
+local my_config = {}
+-- EXAMPLE
+-- my_config.hide_battery = true
+return my_config]])
+    f:close()
+    return {}
+end
+
 return helpers

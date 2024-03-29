@@ -76,7 +76,6 @@ naughty.connect_signal("request::display", function(n)
     local bg_color = urgency_bg_color[n.urgency]
 
     -- Set icon according to app_name
-    print(n.app_name)
     if app_config[n.app_name] then
         icon = app_config[n.app_name].icon
         title_visible = app_config[n.app_name].title
@@ -84,7 +83,7 @@ naughty.connect_signal("request::display", function(n)
         icon = default_icon[n.urgency]
         title_visible = true
     end
-    print(n.title, icon, bg_color, n.urgency)
+    print(n.title, icon, bg_color, n.urgency, n.message)
 
     local actions = wibox.widget({
         notification = n,
